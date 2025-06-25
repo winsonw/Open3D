@@ -357,9 +357,17 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
     if (voxel_size <= 0.0) {
         utility::LogError("voxel_size <= 0.");
     }
-    Eigen::Vector3d voxel_size3 =
-            Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
-    Eigen::Vector3d voxel_min_bound = GetMinBound() - voxel_size3 * 0.5;
+    // Eigen::Vector3d voxel_size3 =
+    //         Eigen::Vector3d(voxel_size, voxel_size, voxel_size);
+    // Eigen::Vector3d voxel_min_bound = GetMinBound() - voxel_size3 * 0.5;
+    // Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
+    Eigen::Vector3d voxel_min_bound = GetMinBound();
+    Eigen::Vector3d voxel_max_bound = GetMaxBound();
+    utility::LogInfo(
+            "VoxelDownSample: voxel_min_bound = {:f},{:f},{:f}",
+            voxel_min_bound(0),
+            voxel_min_bound(1), 
+            voxel_min_bound(2));
     Eigen::Vector3d voxel_max_bound = GetMaxBound() + voxel_size3 * 0.5;
     if (voxel_size * std::numeric_limits<int>::max() <
         (voxel_max_bound - voxel_min_bound).maxCoeff()) {
@@ -371,10 +379,18 @@ std::shared_ptr<PointCloud> PointCloud::VoxelDownSample(
 
     Eigen::Vector3d ref_coord;
     Eigen::Vector3i voxel_index;
+    int min_x_index = 9999999, max_x_index = -9999999;
     for (int i = 0; i < (int)points_.size(); i++) {
-        ref_coord = (points_[i] - voxel_min_bound) / voxel_size;
+        // ref_coord = (points_[i] - voxel_min_bound) / voxel_size;
+        ref_coord(0) = point_[i] / voxel_size;
         voxel_index << int(floor(ref_coord(0))), int(floor(ref_coord(1))),
                 int(floor(ref_coord(2)));
+        if (voxel_index(0) < min_x_index) {
+            min_x_index = voxel_index(0);
+        }
+        if (voxel_index(0) > max_x_index) {
+            max_x_index = voxel_index(0);
+        }
         voxelindex_to_accpoint[voxel_index].AddPoint(*this, i);
     }
     bool has_normals = HasNormals();
